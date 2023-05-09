@@ -1,45 +1,48 @@
 
-//import java.io.Console;
+
 import java.io.IOException;
+
 import java.sql.*;
 import java.sql.Connection;
-// import java.util.*;
+
 import java.util.concurrent.TimeoutException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import com.google.gson.Gson;
+
 import com.rabbitmq.client.*;
 
-public class BranchOffice2Sync {
+public class BranchOfficeSync {
 
     // MySQL database connection parameters
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/salesbo2";
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/sales";
     private static final String DB_USER = "root";
     private static final String DB_PASSWORD = "";
-
-   
-  
+    private String branchOfficeName ;
     private static final String exchangeName = "sales_exchange";
-    //private static final String BO1_QUEUE_NAME = "BO1_queue";
+    
+    public BranchOfficeSync ( String bon){
+        this.branchOfficeName = bon ;
+    }
+  
+   //private static final String BO1_QUEUE_NAME = "BO1_queue";
 
-    // Gson object for serializing messages to JSON
-    //private static final Gson gson = new Gson();
 
-
-    public static void main(String[] args) {
+    public void Sync () {
 
             // time sync 
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String lastSyncTime = now.format(formatter);
         System.out.println(" Formatted timestamp: "+ lastSyncTime );
+        
             // Gson object for serializing messages to JSON
         Gson gson = new Gson();
         try {
             // Connect to the MySQL database
-            Connection conn = DriverManager.getConnection(DB_URL,DB_USER,DB_PASSWORD );
+            Connection conn = DriverManager.getConnection(DB_URL+this.branchOfficeName,DB_USER,DB_PASSWORD );
 
             // Connect to the RabbitMQ server
             ConnectionFactory factory = new ConnectionFactory();
@@ -53,13 +56,7 @@ public class BranchOffice2Sync {
             //channel.queueDeclare(BO1_QUEUE_NAME, false, false, false, null);
             //channel.queueBind(BO1_QUEUE_NAME, exchangeName, "BO1");
 
-            // Create a scheduled task to synchronize data every hour
-            /*Timer timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    try {*/
-                    // Query the local sales database for new and modified records
+           
             String query = "SELECT * FROM productsales WHERE  last_sync IS NULL";
             PreparedStatement stmt = conn.prepareStatement(query);
             ResultSet rs = stmt.executeQuery();
@@ -75,11 +72,11 @@ public class BranchOffice2Sync {
                 sale.setAmt(rs.getFloat("amt"));
                 sale.setTax(rs.getFloat("tax"));
                 sale.setTotal(rs.getFloat("total"));
-                System.out.println("dans boucle rs  "+ sale.getDate());
+                // System.out.println("dans boucle rs  "+ sale.getDate());
                 String json = gson.toJson(sale);
-                System.out.println("chaine a envoyer  "+json);
-                channel.basicPublish(exchangeName, "BO2" , null, json.getBytes("UTF-8"));
-                System.out.println(" [xj sent ' " );
+                // System.out.println("chaine a envoyer  "+json);
+                channel.basicPublish(exchangeName, this.branchOfficeName , null, json.getBytes("UTF-8"));
+                // System.out.println(" [xj sent ' " );
                            
             }
 
@@ -90,7 +87,7 @@ public class BranchOffice2Sync {
                         stmt2.setString(1,lastSyncTime );
                         stmt2.setString(2,lastSyncTime );
                         stmt2.executeUpdate();
-                        System.out.println("query2 done ");
+                       // System.out.println("query2 done ");
 
         } catch (SQLException | IOException | TimeoutException ex ) 
         {

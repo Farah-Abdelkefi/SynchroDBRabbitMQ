@@ -26,7 +26,6 @@ public class HeadOffice {
             com.rabbitmq.client.Connection connection =  factory.newConnection();
             Channel channel = connection.createChannel();
         
-            System.out.println("BO1_QUEUE_NAME");
                 // Declare the queues for the two branch offices
             channel.exchangeDeclare(exchangeName, BuiltinExchangeType.DIRECT);
             channel.queueDeclare(BO1_QUEUE_NAME, false, false, false, null);
@@ -34,18 +33,18 @@ public class HeadOffice {
 
             
                 // Bind the queues to the exchange
-            channel.queueBind(BO1_QUEUE_NAME, exchangeName, "BO1");
-            channel.queueBind(BO2_QUEUE_NAME, exchangeName, "BO2");
+            channel.queueBind(BO1_QUEUE_NAME, exchangeName, "bo1");
+            channel.queueBind(BO2_QUEUE_NAME, exchangeName, "bo2");
             System.out.println("Listening for messages on queues");
             
                 // Create a message consumer for  queue
             DeliverCallback deliverCallback = (consumerTag ,delivery) -> 
             {
-                System.out.println("dans call back to consume queue");
+                // System.out.println("dans call back to consume queue");
                 String message = new String(delivery.getBody(), "UTF-8");
                     
                     // Extract the data from the message
-                System.out.println("received message " + message);
+                // System.out.println("received message " + message);
                 String[] messageParts = message.split(",");
             
                 String date = messageParts[0].split(":")[1].trim();
